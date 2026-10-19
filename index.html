@@ -1,0 +1,278 @@
+<title>服薬観察ノート</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Shippori+Mincho:wght@600&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+/* Layout: one narrow column like a clinic notebook; three tabs — talk, diary, visit summary */
+:root{
+  --bg:#f3f5f4; --surface:#ffffff; --ink:#1d2a2a; --muted:#5d6b6a; --line:#d6dedc;
+  --accent:#2f6f6a; --accent-soft:#e1efed; --warn:#9a5b14; --warn-soft:#f6ecdf;
+  --display:"Shippori Mincho","Hiragino Mincho ProN",serif;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a1a;--surface:#1c2423;--ink:#e3ebe9;--muted:#9aa9a6;--line:#2e3a39;--accent:#7cc2ba;--accent-soft:#213634;--warn:#e0a35a;--warn-soft:#33281b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#141a1a;--surface:#1c2423;--ink:#e3ebe9;--muted:#9aa9a6;--line:#2e3a39;--accent:#7cc2ba;--accent-soft:#213634;--warn:#e0a35a;--warn-soft:#33281b;color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.7}
+.wrap{max-width:640px;margin:0 auto;padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+h1{font-family:var(--display);font-size:1.6rem;margin:0;letter-spacing:.02em;text-wrap:balance}
+.sub{color:var(--muted);margin:0;font-size:.88rem}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;color:var(--muted);padding:8px 12px}
+.tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:inherit;font-size:.9rem;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:6px 14px;border-radius:6px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+form.card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;display:grid;gap:12px}
+label{display:grid;gap:4px;font-size:.85rem;color:var(--muted)}
+input,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 10px;min-width:0}
+textarea{min-height:56px;resize:vertical}
+.chat{display:flex;flex-direction:column;gap:10px}
+.msg{max-width:88%;padding:8px 12px;border-radius:10px;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.me{align-self:flex-end;background:var(--accent-soft)}
+.msg.ai{align-self:flex-start;background:var(--surface);border:1px solid var(--line)}
+.logged{align-self:flex-start;font-size:.78rem;color:var(--accent)}
+.composer{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
+.composer textarea{min-height:64px}
+.help{background:var(--warn-soft);color:var(--ink);border-radius:8px;padding:12px 14px;font-size:.88rem}
+.help strong{color:var(--warn)}
+.num{font-family:var(--mono);user-select:all}
+.list{display:flex;flex-direction:column}
+.entry{border-top:1px solid var(--line);padding-block:14px;display:grid;gap:8px}
+.entry.off{opacity:.55}
+.head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.date{font-family:var(--mono);font-size:.85rem;color:var(--accent);letter-spacing:.04em}
+.share{font-size:.78rem;padding:2px 10px}
+.meds{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:var(--accent-soft);color:var(--accent);font-size:.8rem;padding:2px 10px;border-radius:999px}
+dl{margin:0;display:grid;grid-template-columns:5.5em 1fr;gap:4px 12px}
+dt{color:var(--muted);font-size:.8rem;padding-top:3px}
+dd{margin:0;min-width:0;overflow-wrap:anywhere}
+dd.warn{color:var(--warn)}
+.empty{color:var(--muted);border-top:1px solid var(--line);padding-top:16px;margin:0}
+.note{font-size:.8rem;color:var(--muted)}
+.summary{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;white-space:pre-wrap;overflow-wrap:anywhere;min-height:3em}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>服薬観察ノート</h1>
+    <p class="sub">話した内容から、その日の服薬と様子を日誌に残します。医師に渡す分は自分で選べます。</p>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button id="tab-talk" role="tab" aria-selected="true" data-p="talk" type="button">話す</button>
+    <button id="tab-log" role="tab" aria-selected="false" data-p="log" type="button">日誌</button>
+    <button id="tab-visit" role="tab" aria-selected="false" data-p="visit" type="button">受診用</button>
+  </nav>
+
+  <section id="p-talk">
+    <div class="chat" id="chat">
+      <div class="msg ai">今日の調子や、薬を飲んでみて感じたこと、困っていることを気軽に書いてください。話した中から日誌に必要なところだけ拾って残します。</div>
+    </div>
+    <div id="helpBox" class="help" hidden>
+      <strong>ひとりで抱えないでください。</strong>つらさが強いときは、主治医のクリニックか、次の窓口に連絡してください。<br>
+      よりそいホットライン <span class="num">0120-279-338</span>（24時間）<br>
+      いのちの電話 <span class="num">0570-783-556</span><br>
+      今すぐ危ないときは <span class="num">119</span>
+    </div>
+    <div class="composer" style="margin-top:12px">
+      <textarea id="talkInput" placeholder="例：今日は午前中に座って作業できた。昼から少し頭が痛い"></textarea>
+      <div class="bar" style="flex-direction:column">
+        <button id="send" class="primary" type="button">送る</button>
+        <button id="stop" type="button" hidden>止める</button>
+      </div>
+    </div>
+    <p id="talkStatus" class="note"></p>
+  </section>
+
+  <section id="p-log" hidden>
+    <div class="bar" style="margin-bottom:12px"><button id="toggleForm" type="button">手で追加</button></div>
+    <form id="form" class="card" hidden style="margin-bottom:12px">
+      <label>日付<input id="f-date" type="date" required></label>
+      <label>服薬（カンマ区切り）<input id="f-meds" placeholder="コンサータ18mg, ストラテラ"></label>
+      <label>できたこと<textarea id="f-did"></textarea></label>
+      <label>体感<textarea id="f-feel"></textarea></label>
+      <label>睡眠<input id="f-sleep"></label>
+      <label>副作用・気になること<textarea id="f-concern"></textarea></label>
+      <div class="bar"><button class="primary" type="submit">日誌に追記</button><span id="formMsg" class="note"></span></div>
+    </form>
+    <div id="list" class="list"><p class="empty">記録はまだありません。「話す」で今日の様子を書くと、ここに並びます。</p></div>
+  </section>
+
+  <section id="p-visit" hidden>
+    <div style="display:grid;gap:12px">
+      <p class="sub">「共有する」になっている日の記録だけを、医師が数分で読める要約にまとめます。共有しない日は日誌の各日にある切り替えで外せます。</p>
+      <div class="bar">
+        <label style="display:flex;align-items:center;gap:6px">期間
+          <input id="days" type="number" min="7" max="120" value="30" style="width:5em"> 日分
+        </label>
+        <button id="makeSum" class="primary" type="button">要約を作る</button>
+        <button id="copySum" type="button" disabled>コピー</button>
+      </div>
+      <p id="sumInfo" class="note"></p>
+      <div id="summary" class="summary">まだ要約はありません。受診の前日などに作ってください。</div>
+      <p class="note">要約は記録の整理です。薬の量や治療の判断は主治医と相談してください。</p>
+    </div>
+  </section>
+
+  <p id="status" class="note"></p>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const FIELDS=[["did","できたこと"],["feel","体感"],["compare","比較"],["sleep","睡眠"],["creativity","創造性"],["concern","気になること"]];
+let entries=[];let db=null;let sample=null;let turns=[];let ctl=null;
+const today=()=>new Date().toLocaleDateString('sv-SE');
+function esc(s){const d=document.createElement('div');d.textContent=s??'';return d.innerHTML}
+
+/* tabs */
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  ['talk','log','visit'].forEach(p=>$('p-'+p).hidden=(p!==b.dataset.p));
+});
+
+/* diary render */
+function render(){
+  const list=$('list');
+  if(!entries.length){list.innerHTML='<p class="empty">記録はまだありません。「話す」で今日の様子を書くと、ここに並びます。</p>';return}
+  list.innerHTML=entries.map(e=>{
+    const shared=e.share!==false;
+    const meds=(e.meds||[]).map(m=>`<span class="chip">${esc(m)}</span>`).join('');
+    const rows=FIELDS.filter(([k])=>e[k]).map(([k,l])=>`<dt>${l}</dt><dd class="${k==='concern'?'warn':''}">${esc(e[k])}</dd>`).join('');
+    return `<article class="entry ${shared?'':'off'}"><div class="head"><span class="date">${esc(e.date)}</span><button class="share" type="button" data-d="${esc(e.date)}" aria-pressed="${shared}">${shared?'医師と共有する':'共有しない'}</button></div>${meds?`<div class="meds">${meds}</div>`:''}<dl>${rows}</dl></article>`;
+  }).join('');
+  list.querySelectorAll('.share').forEach(b=>b.onclick=async()=>{
+    if(!db)return;const d=b.dataset.d;const e=entries.find(x=>x.date===d);if(!e)return;
+    b.disabled=true;
+    try{await db.collection('entries').doc(d).update({share:e.share===false})}
+    catch{$('status').textContent='切り替えできませんでした。'}
+    b.disabled=false;
+  });
+}
+
+/* merge new observations into a day's entry */
+function mergeText(a,b){a=(a||'').trim();b=(b||'').trim();if(!b)return a;if(!a)return b;if(a.includes(b))return a;return a+' / '+b}
+async function addToDay(date,add){
+  const ref=db.collection('entries').doc(date);
+  const snap=await ref.get();
+  const cur=snap.exists?{...snap.data()}:{date,share:true};
+  const meds=[...(cur.meds||[])];(add.meds||[]).forEach(m=>{m=String(m).trim();if(m&&!meds.includes(m))meds.push(m)});
+  const next={...cur,date,meds};
+  FIELDS.forEach(([k])=>{next[k]=mergeText(cur[k],add[k])});
+  if(cur.share===undefined)next.share=true;
+  await ref.set(next);
+}
+const hasContent=a=>a&&((a.meds||[]).length||FIELDS.some(([k])=>(a[k]||'').trim()));
+
+/* talk */
+const RULES=`あなたは「服薬観察ノート」の聞き役です。利用者は通院して服薬治療を受けている大人で、自分専用の日誌として使っています。今日は ${today()} です。
+
+返答のルール:
+- 日本語で、2〜4文の短く落ち着いた返事をする。相手の話を受け止め、必要なら一つだけ質問する。
+- 薬の量を増やす・減らす・やめるなどの医療判断はしない。その話題には「主治医に相談を」と添える。
+- 利用者が死にたい気持ちや自分を傷つけることをほのめかしたら、責めずに受け止め、主治医や相談窓口に連絡するよう伝え、crisis を true にする。
+
+日誌の抽出:
+- 利用者が今回のメッセージで実際に言ったことだけを、短い日本語でまとめる。推測や診断は書かない。
+- 該当しない項目は空文字、meds は空配列にする。
+- meds: 飲んだ薬と量（例 "コンサータ18mg"）
+- did: できたこと / feel: 体感・気分 / compare: 以前との比較 / sleep: 睡眠 / creativity: 発想・創造性について / concern: 副作用や困りごと
+
+出力は次の形の JSON だけにする:
+{"reply":"返事","crisis":false,"entry":{"meds":[],"did":"","feel":"","compare":"","sleep":"","creativity":"","concern":""}}`;
+
+function bubble(cls,text){const d=document.createElement('div');d.className=cls;d.textContent=text;$('chat').append(d);d.scrollIntoView({block:'nearest'});return d}
+function errCopy(c){return ({not_granted:'Claude の利用が許可されていないので、会話からの記録は使えません。「日誌」から手で追加できます。',sampling_disabled:'このアカウントでは会話機能が使えません。「日誌」から手で追加できます。',rate_limited:'少し使いすぎたようです。時間をおいてもう一度送ってください。',session_expired:'サインインし直してから送ってください。',invalid_json:'うまく読み取れませんでした。もう一度送ってください。',refused:'この内容には返事ができませんでした。言い方を変えて送ってください。'})[c]||'うまく届きませんでした。もう一度送ってください。'}
+
+async function send(){
+  const text=$('talkInput').value.trim();if(!text||!sample)return;
+  bubble('msg me',text);$('talkInput').value='';
+  turns.push({role:'user',content:text});
+  if(turns.length>16)turns=turns.slice(-16);
+  if(turns[0].role!=='user')turns.shift();
+  const ai=bubble('msg ai','考えています…');
+  $('send').disabled=true;$('stop').hidden=false;$('talkStatus').textContent='';
+  ctl=new AbortController();
+  try{
+    const out=await sample.json([{role:'user',content:RULES},...turns],{cache:false,signal:ctl.signal});
+    const reply=String(out?.reply||'').trim()||'記録しておきますね。';
+    ai.textContent=reply;
+    turns.push({role:'assistant',content:reply});
+    if(out?.crisis)$('helpBox').hidden=false;
+    if(db&&hasContent(out?.entry)){
+      try{await addToDay(today(),out.entry);const n=document.createElement('div');n.className='logged';n.textContent='✓ '+today()+' の日誌に追記しました';$('chat').append(n)}
+      catch{$('talkStatus').textContent='日誌への追記に失敗しました。「日誌」から手で追加できます。'}
+    }
+  }catch(e){
+    turns.pop();
+    if(e?.code==='cancelled'){ai.textContent='（止めました）'}
+    else{ai.remove();$('talkStatus').textContent=errCopy(e?.code)}
+    if(['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(e?.code)){$('send').hidden=true;$('talkInput').disabled=true}
+  }finally{$('send').disabled=false;$('stop').hidden=true}
+}
+$('send').onclick=send;
+$('stop').onclick=()=>ctl?.abort();
+$('talkInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey))send()});
+
+/* manual form */
+$('toggleForm').onclick=()=>{const f=$('form');f.hidden=!f.hidden;if(!f.hidden&&!$('f-date').value)$('f-date').value=today()};
+$('form').onsubmit=async ev=>{
+  ev.preventDefault();if(!db)return;
+  const date=$('f-date').value;if(!date)return;
+  const add={meds:$('f-meds').value.split(/[,、]/).map(s=>s.trim()).filter(Boolean),did:$('f-did').value,feel:$('f-feel').value,sleep:$('f-sleep').value,concern:$('f-concern').value};
+  try{await addToDay(date,add);$('formMsg').textContent='追記しました。';$('form').reset()}
+  catch{$('formMsg').textContent='保存できませんでした。この記録はオーナーだけが書き込めます。'}
+};
+
+/* visit summary */
+function sharedText(days){
+  const from=new Date();from.setDate(from.getDate()-days);const f=from.toLocaleDateString('sv-SE');
+  const picked=entries.filter(e=>e.share!==false&&e.date>=f).slice().reverse();
+  return {count:picked.length,text:picked.map(e=>{
+    const l=[`■ ${e.date}`];if(e.meds?.length)l.push(`服薬: ${e.meds.join('、')}`);
+    FIELDS.forEach(([k,n])=>{if(e[k])l.push(`${n}: ${e[k]}`)});return l.join('\n');
+  }).join('\n\n')};
+}
+$('makeSum').onclick=async()=>{
+  const days=Math.min(120,Math.max(7,Number($('days').value)||30));
+  const {count,text}=sharedText(days);
+  if(!count){$('summary').textContent='この期間に共有する記録がありません。';return}
+  $('sumInfo').textContent=`${count}日分の記録から作ります。`;
+  if(!sample){$('summary').textContent=text;$('copySum').disabled=false;return}
+  $('makeSum').disabled=true;$('summary').textContent='まとめています…';
+  const prompt=`次は患者本人がつけた服薬・体調の日誌のうち、本人が主治医と共有すると選んだ分です。主治医が診察前に1〜2分で読める日本語の要約を作ってください。
+
+形式:
+1. 服薬状況（薬・量・飲めていない期間）
+2. 全体の傾向（2〜3行）
+3. 良くなった点
+4. 副作用・困りごと（日付つき）
+5. 本人が相談したいこと（記録から読み取れる範囲で）
+
+ルール: 記録にないことは書かない。診断や薬の増減の提案はしない。箇条書きで簡潔に。マークダウンの見出し記号は使わない。
+
+日誌:
+${text}`;
+  try{
+    await sample(prompt,{cache:false,onText:({text})=>{$('summary').textContent=text}});
+    $('copySum').disabled=false;
+  }catch(e){$('summary').textContent=e?.text||text;$('sumInfo').textContent=errCopy(e?.code)+'（記録をそのまま表示しています）';$('copySum').disabled=false}
+  finally{$('makeSum').disabled=false}
+};
+$('copySum').onclick=async()=>{
+  try{await navigator.clipboard.writeText($('summary').textContent);$('sumInfo').textContent='コピーしました。'}
+  catch{$('sumInfo').textContent='コピーできませんでした。要約を長押しして選択してください。'}
+};
+
+/* boot */
+(async()=>{
+  const c=window.claude;
+  [db,sample]=await Promise.all([c?.use?.('db'),c?.use?.('sample')]);
+  if(!sample){$('send').disabled=true;$('talkStatus').textContent='この表示では会話機能が使えません。「日誌」から手で追加できます。'}
+  if(!db){$('status').textContent='この表示では記録を読み込めません。';$('toggleForm').disabled=true;return}
+  db.collection('entries').orderBy('date','desc').onSnapshot(s=>{entries=s.docs.map(d=>d.data());render()},()=>{$('status').textContent='記録を読み込めませんでした。再読み込みしてください。'});
+})();
+</script>
