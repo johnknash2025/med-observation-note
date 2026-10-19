@@ -48,6 +48,23 @@ Artifact として公開する場合は、次の権限を宣言します。
 }
 ```
 
+## Android アプリ
+
+`android/` にネイティブ版（Kotlin + Jetpack Compose）があります。[Releases](../../releases) から APK を入手できます。
+
+- **会話からの日誌づけ**は端末内の Gemma 4 E2B（[LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM)）で行います。記録も会話も端末の外に出ません。
+- **受診用の詳しい要約**は、自宅の推論サーバ（Ollama・vLLM・llama.cpp など OpenAI 互換 API）に任せられます。外からは Tailscale などの VPN 経由を想定し、暗号化されていない http は自宅LANとTailscaleのアドレスにだけ許可しています。
+- 日誌は `allowBackup=false` とバックアップ除外ルールで、クラウドバックアップや端末間転送に含めません。
+
+ビルドは GitHub Actions で行います（ワークフローの中身は `ci/android.yml`。`.github/workflows/android.yml` に置くと動きます）。`v*` のタグを付けると、署名済み APK が Release に添付されます。署名には次のリポジトリシークレットが必要です。
+
+| シークレット | 中身 |
+|---|---|
+| `SIGNING_KEYSTORE_B64` | 署名鍵（.jks）を base64 にしたもの |
+| `SIGNING_STORE_PASSWORD` | キーストアのパスワード |
+| `SIGNING_KEY_ALIAS` | 鍵の別名 |
+| `SIGNING_KEY_PASSWORD` | 鍵のパスワード |
+
 ## データの形
 
 ```json

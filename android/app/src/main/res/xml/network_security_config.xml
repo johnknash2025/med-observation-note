@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 自宅サーバ（Tailscale経由のhttpなど）に接続するため平文通信を許可。
+     アプリ側で、http接続はプライベートアドレスとTailscaleの範囲だけに制限している。 -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
