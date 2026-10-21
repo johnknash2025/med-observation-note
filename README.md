@@ -56,7 +56,11 @@ Artifact として公開する場合は、次の権限を宣言します。
 - **受診用の詳しい要約**は、自宅の推論サーバ（Ollama・vLLM・llama.cpp など OpenAI 互換 API）に任せられます。外からは Tailscale などの VPN 経由を想定し、暗号化されていない http は自宅LANとTailscaleのアドレスにだけ許可しています。
 - 日誌は `allowBackup=false` とバックアップ除外ルールで、クラウドバックアップや端末間転送に含めません。
 
-ビルドは GitHub Actions で行います（ワークフローの中身は `ci/android.yml`。`.github/workflows/android.yml` に置くと動きます）。`v*` のタグを付けると、署名済み APK が Release に添付されます。署名には次のリポジトリシークレットが必要です。
+ビルドは GitHub Actions（`.github/workflows/android.yml`）で行います。`v*` のタグを付けると、署名済み APK が Release に添付されます。
+
+**インストール**：Android 12（API 31）以降の端末で、[Releases](../../releases) の最新版の `.apk` をダウンロードして開きます。「提供元不明のアプリ」のインストールを許可するよう求められたら、そのブラウザ（またはファイルアプリ）に許可してください。
+
+フォークして自分で配布する場合は、次のリポジトリシークレットを登録します。
 
 | シークレット | 中身 |
 |---|---|
