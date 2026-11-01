@@ -1,45 +1,47 @@
-# 服薬観察ノート (med-observation-note)
+# Medication Observation Note (med-observation-note)
 
-服薬治療を受けている人が、AIとの何気ない会話から服薬と体調の日誌を残し、**自分で選んだ分だけ**を主治医向けの要約にして渡すための、小さな患者側ツールです。
+English | [日本語](README.ja.md)
 
-医療機器ではありません。診断や薬の増減の判断はせず、患者が医師に伝える材料（問診の補助）を整えることだけを目的にしています。
+A small, patient-side tool for people on medication treatment: casual conversation with an AI turns into a daily log of medication and condition, and **only what you choose** becomes a summary handed to your attending physician.
 
-## このリポジトリで大事なのはコードではなく、仕組みと運用です
+This is not a medical device. It does not diagnose and does not decide whether to increase or decrease medication; it only prepares the material a patient brings to the doctor (an aid to the clinical interview).
 
-画面とロジックは1ファイルで、今のAIなら誰でもすぐ作れます。公開する価値があるのは、患者のプライバシーを守るための次の設計方針です。
+## What matters in this repository is not the code but the design and operations
 
-### 1. 記録は全部、本人だけのもの
-- 日誌は本人しか読み書きできない領域に置く。共同編集者や管理者にも見えない。
-- 会話の全文は保存しない。日誌に残るのは、本人がその会話で実際に話した事実の短い要約だけ。
-- AIの推測・診断・性格判断は記録しない。
+The UI and logic live in a single file, and any modern AI can rebuild it quickly. What is worth publishing is the following design policy for protecting patient privacy.
 
-### 2. 外に出すのは本人が選んだ分だけ
-- 各日の記録に「医師と共有する／しない」を本人が付ける。
-- 医師向けの要約は、共有にした日だけから作る。
-- 送る前に、医師に見える内容を本人が必ず確認できる（自動送信はしない）。
+### 1. All records belong to the person alone
+- The diary lives in a space only the owner can read and write. Not even collaborators or administrators can see it.
+- Full conversation transcripts are not stored. What ends up in the diary is only a short summary of the facts the person actually raised in that conversation.
+- AI speculation, diagnosis, and personality judgments are not recorded.
 
-### 3. AIの役割を「聞き役と整理役」に限定する
-- 薬の量・中止などの医療判断はしない。その話題は主治医への相談を促す。
-- 要約は記録にあることだけを書き、提案や診断を加えない。
-- 希死念慮などが出たときは、責めずに受け止め、主治医や公的な相談窓口を案内する。
+### 2. Only what the person selects leaves the record
+- The person marks each day's entry as shared with the doctor or not.
+- The physician-facing summary is built only from the days marked as shared.
+- Before sending, the person always sees exactly what the doctor will see (nothing is sent automatically).
 
-### 4. 運用で守ること
-- 診断名・薬剤名をアプリの名前や説明、共有リンクのプレビューに出さない。
-- 共有は本人が明示的に行う。リンクの既定は非公開。
-- 医療機関と連携する場合は、個人情報保護法（要配慮個人情報）と医療情報システムの安全管理に関するガイドラインに沿う。
+### 3. The AI's role is limited to listening and organizing
+- No medical decisions about doses or stopping medication. On those topics it encourages consulting the attending physician.
+- Summaries state only what is in the record, adding no suggestions or diagnoses.
+- If suicidal thoughts or similar appear, respond without judgment and point to the attending physician or public support services.
 
-## 動かし方
+### 4. Guarded through operations
+- Diagnosis names and drug names never appear in the app's name, description, or shared-link previews.
+- Sharing is always an explicit act by the person; links are private by default.
+- When integrating with a medical institution, follow the Act on the Protection of Personal Information (sensitive personal information) and the guidelines on the secure management of medical information systems.
 
-`index.html` は claude.ai の Artifact として動くように書かれており、次の2つのランタイム機能を使います。
+## Running it
 
-| 機能 | 用途 | 置き換える場合 |
+`index.html` is written to run as a claude.ai Artifact and uses these two runtime features.
+
+| Feature | Purpose | If you replace it |
 |---|---|---|
-| `claude.use("db")` | 日誌の保存（`entries/<日付>`、本人のみ読み書き） | 端末内の IndexedDB や、本人鍵で暗号化したストレージ |
-| `claude.use("sample")` | 会話の返事と日誌の抽出、医師向け要約 | 任意のLLM API。ローカルLLMにすると記録が端末の外に出ない |
+| `claude.use("db")` | Storing the diary (`entries/<日付>`, owner-only read/write) | On-device IndexedDB, or storage encrypted with the person's own key |
+| `claude.use("sample")` | Conversation replies, diary extraction, physician-facing summary | Any LLM API. With a local LLM the records never leave the device |
 
-どちらも使えない環境では、会話と要約が無効になり、手入力の日誌だけが動きます。
+In environments where neither is available, conversation and summaries are disabled and only the manually entered diary works.
 
-Artifact として公開する場合は、次の権限を宣言します。
+When publishing as an Artifact, declare these permissions.
 
 ```json
 {
@@ -48,28 +50,28 @@ Artifact として公開する場合は、次の権限を宣言します。
 }
 ```
 
-## Android アプリ
+## Android app
 
-`android/` にネイティブ版（Kotlin + Jetpack Compose）があります。[Releases](../../releases) から APK を入手できます。
+A native version (Kotlin + Jetpack Compose) is in `android/`. APKs are available from [Releases](https://github.com/johnknash2025/med-observation-note/releases).
 
-- **会話からの日誌づけ**は端末内の Gemma 4 E2B（[LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM)）で行います。記録も会話も端末の外に出ません。
-- **受診用の詳しい要約**は、自宅の推論サーバ（Ollama・vLLM・llama.cpp など OpenAI 互換 API）に任せられます。外からは Tailscale などの VPN 経由を想定し、暗号化されていない http は自宅LANとTailscaleのアドレスにだけ許可しています。
-- 日誌は `allowBackup=false` とバックアップ除外ルールで、クラウドバックアップや端末間転送に含めません。
+- **Diary entries from conversation** run on-device with Gemma 4 E2B ([LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM)). Neither the records nor the conversations leave the device.
+- **The detailed visit summary** can be delegated to a self-hosted inference server (any OpenAI-compatible API such as Ollama, vLLM, or llama.cpp). From outside, access is assumed to go through a VPN such as Tailscale, and unencrypted http is allowed only on the home LAN and Tailscale addresses.
+- The diary is excluded from cloud backup and device-to-device transfer via `allowBackup=false` and the backup exclusion rules.
 
-ビルドは GitHub Actions（`.github/workflows/android.yml`）で行います。`v*` のタグを付けると、署名済み APK が Release に添付されます。
+Builds run on GitHub Actions (`.github/workflows/android.yml`). Tagging `v*` attaches a signed APK to the Release.
 
-**インストール**：Android 12（API 31）以降の端末で、[Releases](../../releases) の最新版の `.apk` をダウンロードして開きます。「提供元不明のアプリ」のインストールを許可するよう求められたら、そのブラウザ（またはファイルアプリ）に許可してください。
+**Installation**: on a device running Android 12 (API 31) or later, download and open the `.apk` of the latest release from [Releases](https://github.com/johnknash2025/med-observation-note/releases). If you are asked to allow installing apps from unknown sources, grant that permission to the browser (or file app) you used.
 
-フォークして自分で配布する場合は、次のリポジトリシークレットを登録します。
+If you fork and distribute it yourself, register these repository secrets.
 
-| シークレット | 中身 |
+| Secret | Contents |
 |---|---|
-| `SIGNING_KEYSTORE_B64` | 署名鍵（.jks）を base64 にしたもの |
-| `SIGNING_STORE_PASSWORD` | キーストアのパスワード |
-| `SIGNING_KEY_ALIAS` | 鍵の別名 |
-| `SIGNING_KEY_PASSWORD` | 鍵のパスワード |
+| `SIGNING_KEYSTORE_B64` | The signing keystore (.jks) encoded as base64 |
+| `SIGNING_STORE_PASSWORD` | Keystore password |
+| `SIGNING_KEY_ALIAS` | Key alias |
+| `SIGNING_KEY_PASSWORD` | Key password |
 
-## データの形
+## Data shape
 
 ```json
 {
@@ -85,12 +87,12 @@ Artifact として公開する場合は、次の権限を宣言します。
 }
 ```
 
-## 今後
+## Roadmap
 
-- ローカルLLMだけで完結するモード
-- 記録の端末内暗号化と、医師に渡す分だけを一時リンクで共有する仕組み
-- 受診のたびに医師の反応を記録し、要約の形式を改善する
+- A mode that works entirely with a local LLM
+- On-device encryption of records, plus sharing only the part given to the doctor via temporary links
+- Recording the physician's reactions at each visit to improve the summary format
 
-## ライセンス
+## License
 
 MIT
